@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Author = Laurens Houben
 # Contact = https://www.linkedin.com/in/laurenshouben
 # TODO:
@@ -16,6 +16,10 @@ parser.add_argument("-a", dest="address", help="Single email address to be check
 parser.add_argument(
     "-f", dest="filename", help="File to be checked with one email addresses per line"
 )
+parser.add_argument(
+    "-w", action="store_true", help="Write the output of the command to a file"
+)
+
 args = parser.parse_args()
 
 rate = (
@@ -38,7 +42,7 @@ ENDC = "\033[0m"
 
 address = str(args.address)
 filename = str(args.filename)
-lstEmail = ["info@example.com", "example@example.com"]
+write = args.w
 
 
 def main():
@@ -46,15 +50,23 @@ def main():
         checkAddress(address)
     elif filename != "None":
         email = [line.rstrip("\n") for line in open(filename)]  # strip the newlines
-        for email in email:
-            checkAddress(email)
+        if write:
+            with open("pwned_or_not.csv", "a") as output_file:
+                for email in email:
+                    checkAddress(email, output_file)
+        else:
+            for email in email:
+                checkAddress(email)
     else:
-        for email in lstEmail:
-            checkAddress(email)
+        print(
+            "Please either specify an email address or a list of email addresses to be checked."
+        )
 
 
-def checkAddress(email):
+def checkAddress(email, output_file=None):
     sleep = rate  # Reset default acceptable rate
+    print(email)
+    import ipdb; ipdb.set_trace()
     check = requests.get(
         "https://"
         + server
@@ -64,15 +76,17 @@ def checkAddress(email):
         proxies=proxies,
         verify=sslVerify,
     )
-    if str(check.status_code) == "404":  # The address has not been breached.
+    print(check)
+
+    if check.status_code == "404":  # The address has not been breached.
         print(OKGREEN + "[i] " + email + " has not been breached." + ENDC)
         time.sleep(sleep)  # sleep so that we don't trigger the rate limit
-        return False
-    elif str(check.status_code) == "200":  # The address has been breached!
+        status = False
+    elif check.status_code == "200":  # The address has been breached!
         print(FAILRED + "[!] " + email + " has been breached!" + ENDC)
         time.sleep(sleep)  # sleep so that we don't trigger the rate limit
-        return True
-    elif str(check.status_code) == "429":  # Rate limit triggered
+        status = True
+    elif check.status_code == "429":  # Rate limit triggered
         print(
             WARNING
             + "[!] Rate limit exceeded, server instructed us to retry after "
@@ -93,7 +107,12 @@ def checkAddress(email):
     else:
         print(WARNING + "[!] Something went wrong while checking " + email + ENDC)
         time.sleep(sleep)  # sleep so that we don't trigger the rate limit
-        return True
+        status = True
+
+        if output_file:
+            output_file.write(f"{email}, {status}\n")
+
+    return status
 
 
 if __name__ == "__main__":
