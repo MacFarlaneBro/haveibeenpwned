@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python3.6
 # Author = Laurens Houben
 # Contact = https://www.linkedin.com/in/laurenshouben
 # TODO:
@@ -49,7 +49,7 @@ def main():
     if address != "None":
         checkAddress(address)
     elif filename != "None":
-        email = [line.rstrip("\n") for line in open(filename)]  # strip the newlines
+        email = [line.rstrip("\n") for line in open(filename)]
         if write:
             with open("pwned_or_not.csv", "a") as output_file:
                 for email in email:
@@ -66,7 +66,6 @@ def main():
 def checkAddress(email, output_file=None):
     sleep = rate  # Reset default acceptable rate
     print(email)
-    import ipdb; ipdb.set_trace()
     check = requests.get(
         "https://"
         + server
@@ -78,15 +77,15 @@ def checkAddress(email, output_file=None):
     )
     print(check)
 
-    if check.status_code == "404":  # The address has not been breached.
+    if check.status_code == 404:  # The address has not been breached.
         print(OKGREEN + "[i] " + email + " has not been breached." + ENDC)
         time.sleep(sleep)  # sleep so that we don't trigger the rate limit
         status = False
-    elif check.status_code == "200":  # The address has been breached!
+    elif check.status_code == 200:  # The address has been breached!
         print(FAILRED + "[!] " + email + " has been breached!" + ENDC)
         time.sleep(sleep)  # sleep so that we don't trigger the rate limit
         status = True
-    elif check.status_code == "429":  # Rate limit triggered
+    elif check.status_code == 429:  # Rate limit triggered
         print(
             WARNING
             + "[!] Rate limit exceeded, server instructed us to retry after "
@@ -109,8 +108,8 @@ def checkAddress(email, output_file=None):
         time.sleep(sleep)  # sleep so that we don't trigger the rate limit
         status = True
 
-        if output_file:
-            output_file.write(f"{email}, {status}\n")
+    if output_file:
+        output_file.write(f"{email}, {status}\n")
 
     return status
 
