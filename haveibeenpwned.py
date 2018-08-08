@@ -66,7 +66,6 @@ def main():
 def checkAddress(email, output_file=None):
     sleep = rate  # Reset default acceptable rate
     print(email)
-    import ipdb; ipdb.set_trace()
     check = requests.get(
         "https://"
         + server
